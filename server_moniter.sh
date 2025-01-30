@@ -13,10 +13,7 @@ log_message() {
 check_cpu() {
     CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
     CPU_INT=${CPU_USAGE%.*}  # Remove decimal part
-    if [[ ! "$CPU_INT" =~ ^[0-9]+$ ]]; then
-        log_message "Error: Invalid CPU usage value"
-        return
-    fi
+    
     if [ "$CPU_INT" -gt "$CPU_THRESHOLD" ]; then
         send_alert "High CPU Usage" "CPU usage is at ${CPU_USAGE}%"
     fi
@@ -43,12 +40,6 @@ check_disk() {
 
 check_memory() {
     MEM_USAGE=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100}')
-    
-    # Check if MEM_USAGE is a valid number
-    if [[ ! "$MEM_USAGE" =~ ^[0-9]+$ ]]; then
-        log_message "Error: Invalid memory usage value"
-        return
-    fi
     
     if [ "$MEM_USAGE" -gt "$MEMORY_THRESHOLD" ]; then
         send_alert "High Memory Usage" "Memory usage is at ${MEM_USAGE}%"
