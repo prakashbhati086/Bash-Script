@@ -20,14 +20,21 @@ check_cpu() {
     log_message "CPU usage: ${CPU_USAGE}%"
 }
 check_disk() {
-    df -h --output=pcent,target | tail -n +2 | while IFS=" " read -r USAGE MOUNT; do
+    df -h --output=pcent,target | tail -n +2 | while read -r USAGE MOUNT; do
         USAGE=${USAGE%"%"}  
+
+        if [[ -z "$USAGE" || -z "$MOUNT" ]]; then
+            continue
+        fi
+
         if [ "$USAGE" -gt "$DISK_THRESHOLD" ]; then
             send_alert "High Disk Usage" "Disk usage is at ${USAGE}% on mount point $MOUNT"
         fi
+        
         log_message "Disk usage on $MOUNT: ${USAGE}%"
     done
 }
+
 
 check_memory() {
     MEM_USAGE=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100}')
