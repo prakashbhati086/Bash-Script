@@ -12,30 +12,21 @@ log_message() {
 
 check_cpu() {
     CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
-    CPU_INT=${CPU_USAGE%.*}  # Remove decimal part
+    CPU_INT=${CPU_USAGE%.*}
     
     if [ "$CPU_INT" -gt "$CPU_THRESHOLD" ]; then
         send_alert "High CPU Usage" "CPU usage is at ${CPU_USAGE}%"
     fi
     log_message "CPU usage: ${CPU_USAGE}%"
 }
-
 check_disk() {
-    while IFS= read -r line; do
-        USAGE=$(echo "$line" | awk '{print $5}' | sed 's/%//')
-        MOUNT=$(echo "$line" | awk '{print $6}')
-        
-        # Check if $USAGE is a valid number
-        if [[ ! "$USAGE" =~ ^[0-9]+$ ]]; then
-            log_message "Error: Invalid disk usage value"
-            continue
-        fi
-        
+    df -h --output=pcent,target | tail -n +2 | while IFS=" " read -r USAGE MOUNT; do
+        USAGE=${USAGE%"%"}  
         if [ "$USAGE" -gt "$DISK_THRESHOLD" ]; then
             send_alert "High Disk Usage" "Disk usage is at ${USAGE}% on mount point $MOUNT"
         fi
         log_message "Disk usage on $MOUNT: ${USAGE}%"
-    done < <(df -h --output=pcent,target | tail -n +2)
+    done
 }
 
 check_memory() {
